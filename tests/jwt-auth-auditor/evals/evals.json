@@ -1,0 +1,23 @@
+{
+  "skill_name": "jwt-auth-auditor",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Audit the authentication implementation in this codebase and give me a graded report on how safe it is.",
+      "expected_output": "A graded audit report that finds all six seeded defects (alg-from-token/none bypass, fallback signing secret, missing-exp-passes bug, localStorage token, 24h access TTL, client-side-only logout) with file:line evidence, grading D or F.",
+      "files": ["fixtures/fixture-flawed"]
+    },
+    {
+      "id": 1,
+      "prompt": "We are about to ship this. Please review our auth code for security problems and grade it.",
+      "expected_output": "A report that does NOT flag the OWASP-style denylist as a failure, recognizes rotation and reuse detection, notes Tier 3 gaps (refresh cookie path, rate limiting) as findings, and grades A or B with no confirmed false positives.",
+      "files": ["fixtures/fixture-solid"]
+    },
+    {
+      "id": 2,
+      "prompt": "Can you audit the JWT handling in this FastAPI service and grade it?",
+      "expected_output": "A report that honestly states it audited at standards depth for a non-JS stack, finds the fallback secret default, and reports no Node/axios-specific rules as failures against Python code.",
+      "files": ["fixtures/fixture-python"]
+    }
+  ]
+}

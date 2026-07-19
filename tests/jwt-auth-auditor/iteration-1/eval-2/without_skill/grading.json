@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "run": "without_skill",
+  "grade_assigned_by_report": "C+",
+  "expectations": [
+    { "text": "Report flags the os.environ.get fallback default secret", "passed": true, "evidence": "Found at app/auth.py line 6 with forgery consequence" },
+    { "text": "No Node/axios-specific noise against Python code", "passed": true, "evidence": "No stack-mismatch findings" },
+    { "text": "Acknowledges good practices", "passed": true, "evidence": "Credited pinned algorithm, claim validation, TTL, cookie flags, no-store header" }
+  ],
+  "score": "3/3 (depth-statement assertion not applicable to baseline)",
+  "notes": "Baseline found two things the skill did not: python-jose 3.3.0 known CVEs (2024-33663/33664) and the passlib/bcrypt breakage. It missed the require_exp/missing-exp acceptance the skill confirmed by reading library source. Graded C+ vs the skill's F for the same fallback-secret defect; the skill's rubric treats a forgeable-signing-key path as an automatic Tier 1 failure."
+}

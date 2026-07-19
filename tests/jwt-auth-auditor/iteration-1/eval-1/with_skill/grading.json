@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "run": "with_skill",
+  "grade_assigned_by_report": "C",
+  "expectations": [
+    { "text": "The OWASP-style jti denylist revocation model is not reported as a failure", "passed": true, "evidence": "The denylist is credited in 'What is done well' as store-backed validation that fails closed; never flagged. Lane discipline held" },
+    { "text": "Report acknowledges rotation and reuse detection with family revocation are present and correct", "passed": true, "evidence": "Called 'textbook': rotation burns old jti before minting, family-wide revocation on reuse with logging (R04, R09, R10 credited)" },
+    { "text": "Report notes at least one real Tier 3 gap (refresh cookie path scope or rate limiting)", "passed": true, "evidence": "Both found: T25 path '/' ADVISORY and R13 missing rate limiting as FAIL (PLAUSIBLE) with the upstream-gateway assumption named" },
+    { "text": "Overall grade is A or B", "passed": null, "evidence": "INVALIDATED BY FIXTURE BUG: the report graded C on a CONFIRMED R12 failure that is genuinely present in the fixture (password change revokes only the presented cookie's family; sessions from other logins survive). The fixture author intended the code to be correct here and it is not. The auditor was right; the ground truth was wrong" },
+    { "text": "No finding is reported as a confirmed failure that is actually a false positive", "passed": true, "evidence": "The single FAIL (CONFIRMED), R12, is a true positive verified by reading the fixture: families are minted per login (routes.js:33) and only the presented family is revoked (routes.js:91-104). Zero false positives" }
+  ],
+  "score": "4/4 valid (1 assertion void: fixture ground truth was wrong and the skill caught the real bug)"
+}

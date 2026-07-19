@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "false-positive-discipline-solid-codebase",
+  "prompt": "We are about to ship this. Please review our auth code for security problems and grade it.",
+  "fixture": "fixtures/fixture-solid",
+  "assertions": [
+    { "name": "no-fail-on-denylist", "text": "The OWASP-style jti denylist revocation model is not reported as a failure (advisory at most)" },
+    { "name": "recognizes-rotation", "text": "Report acknowledges that rotation and reuse detection with family revocation are present and correct" },
+    { "name": "finds-tier3-gaps", "text": "Report notes at least one real Tier 3 gap: refresh cookie not path-scoped, or no rate limiting on the refresh endpoint" },
+    { "name": "grade-a-or-b", "text": "Overall grade is A or B (with-skill run only)" },
+    { "name": "no-confirmed-false-positives", "text": "No finding is reported as a confirmed failure (nothing failure-worthy is seeded)" }
+  ]
+}

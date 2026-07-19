@@ -1,0 +1,25 @@
+{
+  "name": "jwt-auth-best-practices",
+  "description": "Auditing tools built from the JWT, refresh token, RBA, and OIDC best-practices guide: standards-mapped authentication code review for Node.js and beyond.",
+  "owner": {
+    "name": "Philip A Senger",
+    "url": "https://github.com/psenger"
+  },
+  "plugins": [
+    {
+      "name": "jwt-auth-auditor",
+      "source": "./",
+      "description": "Audit a codebase's JWT, refresh token, session cookie, risk-based authentication, and OIDC implementation against RFC 8725, RFC 9700, OWASP cheat sheets, and NIST SP 800-63B-4. Produces a tiered scorecard with evidence-backed findings and concrete fixes.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Philip A Senger"
+      },
+      "license": "MIT",
+      "homepage": "https://github.com/psenger/jwt-token-refresh-rba-oidc-best-practice",
+      "repository": "https://github.com/psenger/jwt-token-refresh-rba-oidc-best-practice",
+      "keywords": ["jwt", "oidc", "oauth", "security", "audit", "refresh-token", "session", "authentication"],
+      "category": "security",
+      "skills": ["./skills/jwt-auth-auditor"]
+    }
+  ]
+}

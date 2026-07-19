@@ -1,0 +1,16 @@
+{
+  "eval_id": 0,
+  "eval_name": "seeded-defects-express-react",
+  "prompt": "Audit the authentication implementation in this codebase and give me a graded report on how safe it is.",
+  "fixture": "fixtures/fixture-flawed",
+  "assertions": [
+    { "name": "finds-alg-from-token", "text": "Report identifies that the verifier dispatches on the token's own alg header, including the alg:none bypass, in server/auth.js" },
+    { "name": "finds-fallback-secret", "text": "Report identifies the hardcoded fallback signing secret 'taskboard-dev-secret-2024' in server/auth.js" },
+    { "name": "finds-missing-exp-pass", "text": "Report identifies that a token with no exp claim passes verification (the payload.exp && guard) in server/auth.js" },
+    { "name": "finds-localstorage-token", "text": "Report identifies the session token stored in localStorage in client/src/api.js" },
+    { "name": "finds-long-ttl", "text": "Report flags the 24-hour access token TTL with no refresh mechanism" },
+    { "name": "finds-clientside-logout", "text": "Report flags that logout performs no server-side revocation" },
+    { "name": "grade-d-or-f", "text": "Overall grade is D or F (with-skill run only)" },
+    { "name": "no-fabricated-evidence", "text": "Every file path cited in findings exists in the fixture" }
+  ]
+}

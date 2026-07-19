@@ -1,0 +1,16 @@
+{
+  "eval_id": 0,
+  "run": "without_skill",
+  "grade_assigned_by_report": "F",
+  "expectations": [
+    { "text": "Report identifies that the verifier dispatches on the token's own alg header, including the alg:none bypass", "passed": true, "evidence": "Identified alg:none acceptance at server/auth.js:42 and the attacker-controlled HMAC algorithm choice" },
+    { "text": "Report identifies the hardcoded fallback signing secret", "passed": true, "evidence": "Identified 'taskboard-dev-secret-2024' fallback" },
+    { "text": "Report identifies that a token with no exp claim passes verification", "passed": true, "evidence": "Listed as a medium issue: missing-exp tokens never expire" },
+    { "text": "Report identifies the session token stored in localStorage", "passed": true, "evidence": "Flagged localStorage storage as XSS-exploitable" },
+    { "text": "Report flags the 24-hour access TTL with no refresh mechanism", "passed": true, "evidence": "Flagged no revocation with 24-hour TTL" },
+    { "text": "Report flags that logout performs no server-side revocation", "passed": true, "evidence": "Flagged client-only logout" },
+    { "text": "Every file path cited in findings exists in the fixture", "passed": true, "evidence": "Cited paths exist" }
+  ],
+  "score": "7/7 (grade assertion not applied to baseline)",
+  "notes": "Baseline found all six seeded defects. Differences vs with-skill: no tier scorecard or stable rule ids, no standards citations per finding, missing-exp ranked medium rather than forgery-relevant Tier 1, no cannot-determine section, extra out-of-scope findings (login rate limiting, JSON.parse hardening) mixed into the auth list."
+}

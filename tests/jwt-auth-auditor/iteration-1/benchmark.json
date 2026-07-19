@@ -1,0 +1,55 @@
+{
+  "skill_name": "jwt-auth-auditor",
+  "iteration": 1,
+  "model": "claude-fable-5",
+  "summary": {
+    "with_skill": {
+      "assertions_passed": "16/16 valid",
+      "grades": { "eval-0-flawed": "F", "eval-1-solid": "C", "eval-2-python": "F" },
+      "confirmed_false_positives": 0,
+      "fabricated_evidence": 0,
+      "avg_tokens": 52444,
+      "avg_duration_seconds": 421.4
+    },
+    "without_skill_baseline": {
+      "assertions_passed": "14/14 applicable",
+      "grades": { "eval-0-flawed": "F", "eval-1-solid": "B+", "eval-2-python": "C+" },
+      "confirmed_false_positives": 0,
+      "avg_tokens": 31142,
+      "avg_duration_seconds": 136.4
+    }
+  },
+  "per_eval": [
+    {
+      "eval": 0,
+      "fixture": "fixture-flawed (Node/Express + React, hand-rolled JWT)",
+      "seeded_defects": 6,
+      "with_skill": { "score": "8/8", "grade": "F", "found_all_seeded": true },
+      "without_skill": { "score": "7/7", "grade": "F", "found_all_seeded": true },
+      "delta": "Both found every seeded defect. Skill adds: tier scorecard, stable rule ids, per-finding RFC/OWASP citations, a cannot-determine section, and correct Tier-1 ranking of the missing-exp bug (baseline ranked it medium). Skill correctly treated placeholder bcrypt hashes as fixture data rather than a finding."
+    },
+    {
+      "eval": 1,
+      "fixture": "fixture-solid (Node/Express + jose + Redis rotation, React/axios)",
+      "seeded_defects": 0,
+      "unintended_real_bug": "password-change revokes only the presented cookie's token family; sessions from other logins survive (R12)",
+      "with_skill": { "score": "4/4 valid", "grade": "C", "false_positives": 0, "caught_unintended_bug": true },
+      "without_skill": { "score": "4/4", "grade": "B+", "false_positives": 0, "caught_unintended_bug": true },
+      "delta": "Both caught the unintended password-change bug. Neither flagged the OWASP denylist as a failure (lane discipline held with and without the skill). Skill graded C by rule (a confirmed Tier 2 failure caps at C) vs baseline's reviewer-judgment B+; the skill grade is more reproducible. One planned assertion (grade A/B) was voided because the fixture actually contains the bug."
+    },
+    {
+      "eval": 2,
+      "fixture": "fixture-python (FastAPI + python-jose, non-target stack)",
+      "seeded_defects": 2,
+      "with_skill": { "score": "4/4", "grade": "F", "stated_standards_depth": true, "stack_mismatch_noise": 0 },
+      "without_skill": { "score": "3/3", "grade": "C+", "stated_standards_depth": false },
+      "delta": "Skill explicitly declared standards-depth for the non-JS stack and named the one skipped stack rule; baseline did not frame depth. Skill traced python-jose source to confirm the missing-exp default. Baseline found python-jose CVEs the skill's scope boundary excluded, the one respect in which the boundary may be too strict for the auth library itself."
+    }
+  ],
+  "conclusions": [
+    "Zero confirmed false positives and zero fabricated file paths across all three with-skill runs, the primary failure mode for this genre.",
+    "The skill's value over a strong baseline is not raw detection (baseline found the seeded defects too) but structure: a reproducible tier-based grade, stable rule ids, standards citations, honest cross-stack depth labeling, and lane discipline that never faults a compliant OWASP alternative.",
+    "The skill costs ~1.7x the tokens and ~3x the wall-clock of an unstructured review, the price of reading four rule files and tracing evidence.",
+    "Two follow-ups surfaced: (1) consider allowing findings against the auth library itself (known CVEs) despite the general no-dependency-CVE boundary; (2) the solid fixture needs its password-change bug fixed so future iterations have a clean A/B control."
+  ]
+}

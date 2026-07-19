@@ -1,0 +1,16 @@
+{
+  "eval_id": 0,
+  "run": "with_skill",
+  "grade_assigned_by_report": "F",
+  "expectations": [
+    { "text": "Report identifies that the verifier dispatches on the token's own alg header, including the alg:none bypass", "passed": true, "evidence": "Finding T13 FAIL (CONFIRMED) quotes the alg:none branch at server/auth.js:42-47 and separately calls out the HS512/sha256 dispatch off the token header" },
+    { "text": "Report identifies the hardcoded fallback signing secret", "passed": true, "evidence": "Finding T08 FAIL (CONFIRMED) quotes the process.env.JWT_SECRET || 'taskboard-dev-secret-2024' line and notes forgery is possible today" },
+    { "text": "Report identifies that a token with no exp claim passes verification", "passed": true, "evidence": "Finding T16 FAIL (CONFIRMED) quotes the payload.exp && guard and explains the falsy-skip producing a never-expiring token" },
+    { "text": "Report identifies the session token stored in localStorage", "passed": true, "evidence": "Finding T22 FAIL (CONFIRMED) cites client/src/api.js lines 6, 15-16, 22-23" },
+    { "text": "Report flags the 24-hour access TTL with no refresh mechanism", "passed": true, "evidence": "Finding R01 FAIL (CONFIRMED) cites TOKEN_TTL_SECONDS at server/auth.js:4 and ties it to the absence of refresh/revocation" },
+    { "text": "Report flags that logout performs no server-side revocation", "passed": true, "evidence": "R11/R12 architectural ADVISORY quotes the empty logout handler at server/index.js:19-22; scored as advisory because no store subsystem exists to fault, with the reasoning stated" },
+    { "text": "Overall grade is D or F", "passed": true, "evidence": "Grade F, justified by multiple Tier 1 failures" },
+    { "text": "Every file path cited in findings exists in the fixture", "passed": true, "evidence": "Cited files: server/auth.js, server/index.js, server/users.js, client/src/api.js; all exist. Bonus: correctly identified the placeholder bcrypt hashes as fixture data instead of reporting them" }
+  ],
+  "score": "8/8"
+}

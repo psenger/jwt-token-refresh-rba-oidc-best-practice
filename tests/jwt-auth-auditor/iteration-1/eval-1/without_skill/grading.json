@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "run": "without_skill",
+  "grade_assigned_by_report": "B+",
+  "expectations": [
+    { "text": "The OWASP-style jti denylist revocation model is not reported as a failure", "passed": true, "evidence": "Praised the rotation/denylist design" },
+    { "text": "Report acknowledges rotation and reuse detection with family revocation are present and correct", "passed": true, "evidence": "Credited jti denylist, family-wide revocation on reuse, fail-closed Redis checks, single-flight client" },
+    { "text": "Report notes at least one real Tier 3 gap", "passed": true, "evidence": "Found missing rate limiting on login and refresh; also noted cookie hardening options" },
+    { "text": "No confirmed false positives", "passed": true, "evidence": "Also found the genuine password-change revocation bug (only the presenting family is revoked). Additional findings (missing package.json deps, redis connect() never called) are true observations about the fixture snapshot" }
+  ],
+  "score": "4/4",
+  "notes": "Strong baseline. Graded B+ despite finding the same password-change bug the skill graded C for; the skill's rubric is more conservative and more reproducible (confirmed Tier 2 failure caps at C by rule rather than reviewer mood). Baseline mixed non-auth operational issues (unhandled promise rejections) into the security list."
+}

@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "run": "with_skill",
+  "grade_assigned_by_report": "F",
+  "expectations": [
+    { "text": "Report states it audited at standards level because the stack is not JS/TS", "passed": true, "evidence": "Header line 'Audit depth: standards-level (Python/FastAPI...)' plus an explicit paragraph naming T06 as the skipped Node-only rule" },
+    { "text": "Report flags the os.environ.get fallback default secret", "passed": true, "evidence": "T08 FAIL (CONFIRMED) at app/auth.py:6 with a concrete forgery scenario and an import-time fix" },
+    { "text": "No Node/axios-specific rules reported as failures against Python code", "passed": true, "evidence": "All findings are standards-lane; the one stack rule (T06) was explicitly marked NOT-APPLICABLE; no axios/interceptor rules appear" },
+    { "text": "Report acknowledges the pinned algorithm, checked issuer/audience, and httpOnly cookie as done well", "passed": true, "evidence": "'What is done well' credits the algorithms allowlist (T13), iss/aud enforcement (T17), and the full cookie flag set (T23), among seven credited items" }
+  ],
+  "score": "4/4",
+  "notes": "Exceeded expectations on evidence: traced python-jose 3.3.0 source to confirm require_exp defaults to False, making the missing-exp finding CONFIRMED rather than assumed. Found the same two out-of-catalog issues as the baseline (credentials as query params, bcrypt timing oracle) and correctly labeled them as outside the rule catalog. One gap vs baseline: did not surface python-jose's known CVEs; the skill's scope boundary excludes dependency CVEs, which may be too strict for the auth library itself."
+}
