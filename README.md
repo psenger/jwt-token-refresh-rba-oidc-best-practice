@@ -100,7 +100,7 @@ The standard answer, which the rest of this guide builds out:
 
 That is the access token / refresh token split.
 
-![flowchart diagram 1|622](flowchart-1.svg)
+![flowchart diagram 1](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-1.svg)
 
 The access token is exposed constantly, so it must be cheap to lose. The refresh token is rarely exposed and tightly guarded, so it can live longer.
 
@@ -846,7 +846,7 @@ Think about what that buys you. Your most valuable, longest-lived credential has
 
 Two cookies, two paths, one line of config, and the blast radius of an entire category of leak collapses.
 
-![flowchart diagram 2|622](flowchart-2.svg)
+![flowchart diagram 2](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-2.svg)
 
 ### The client side is almost nothing
 
@@ -1036,7 +1036,7 @@ This is the crucial insight: **rotation does not prevent theft. It makes theft d
 
 None of this is a home-grown trick. RFC 9700 requires refresh tokens for public clients to be sender-constrained or rotated, and recommends revoking the whole family when a rotated token is presented again.[^rfc9700-refresh]
 
-![state diagram 1|622](state-1.svg)
+![state diagram 1](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/state-1.svg)
 
 Implementation. Give every login a `family` id, and carry it through every descendant:
 
@@ -1114,7 +1114,7 @@ And make the endpoint a **POST**. A refresh mutates server state: it burns one t
 
 ### The complete picture
 
-![sequence diagram 1|622](sequence-1.svg)
+![sequence diagram 1](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/sequence-1.svg)
 
 Step 18 is worth pausing on: **re-check the user on refresh.** Deactivated, deleted, suspended, password changed? Refresh is your one scheduled opportunity, every five minutes, to notice that the world changed. Use it. It is the closest thing to a revocation heartbeat you get for free.
 
@@ -1130,7 +1130,7 @@ An axios interceptor is a **function axios runs for you at a fixed point in the 
 
 There are two, and they bracket the network call:
 
-![flowchart diagram 3|622](flowchart-3.svg)
+![flowchart diagram 3](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-3.svg)
 
 **Request interceptor** runs after your code calls `api.get()` but before the request leaves. It gets the config object and must return it. Use it to add headers, log, add a correlation id.
 
@@ -1203,7 +1203,7 @@ This is correct for **one** request at a time. Real apps do not make one request
 
 Picture a dashboard mounting. TanStack Query fires six queries in parallel. The access token expired two minutes ago while the user was reading. All six return 401 at once. All six interceptors run. **All six call `refreshToken()`.**
 
-![flowchart diagram 4|622](flowchart-4.svg)
+![flowchart diagram 4](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-4.svg)
 
 Six refresh calls where one would do is wasteful. That is the mild version.
 
@@ -1321,7 +1321,7 @@ function onSessionExpired() {
 
 ### The happy path, end to end
 
-![sequence diagram 2|622](sequence-2.svg)
+![sequence diagram 2](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/sequence-2.svg)
 
 ### Do not handle 403 the same way
 
@@ -1360,7 +1360,7 @@ So do not try. **Do not block on high risk.** Blocking means confidently locking
 
 Step-up converts an unanswerable question ("is this the real user?") into an answerable one ("can you receive a code at the phone number this account registered two years ago?"). That second question has a definite answer, and it is one an attacker almost never passes.
 
-![flowchart diagram 5|622](flowchart-5.svg)
+![flowchart diagram 5](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-5.svg)
 
 Notice there is no "denied" box. Even the worst score is a door with a stricter lock, not a wall.
 
@@ -1513,7 +1513,7 @@ function classifyDevice( fingerprintHash, deviceHistory = [] ) {
 }
 ```
 
-![state diagram 2|622](state-2.svg)
+![state diagram 2](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/state-2.svg)
 
 Three tiers, not two, because "seen last week" and "seen 14 months ago" are genuinely different. Recency is itself a signal, and collapsing it to a boolean throws away information you already have.
 
@@ -1937,7 +1937,7 @@ Four endpoints:
 | `POST /password-reset/complete` | If all factors satisfied, set the new password |
 | `POST /password-reset/cancel` | Destroy the session |
 
-![sequence diagram 3|622](sequence-3.svg)
+![sequence diagram 3](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/sequence-3.svg)
 
 Steps 21 and 22 are the ones that get skipped, and both matter:
 
@@ -2027,7 +2027,7 @@ Log the user id, never the OTP. The OTP is a credential. It does not go in your 
 
 ### The complete decision flow
 
-![flowchart diagram 6|622](flowchart-6.svg)
+![flowchart diagram 6](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-6.svg)
 
 ### Tuning
 
@@ -2296,7 +2296,7 @@ RS256 splits the power in two:
 
 That is not a performance tuning decision. It is the difference between twenty trusted issuers and one.
 
-![flowchart diagram 7|622](flowchart-7.svg)
+![flowchart diagram 7](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-7.svg)
 
 **The signal to migrate:** the first time you are about to copy a signing secret into a second service's config. That is the moment, and it always feels too small to stop for.
 
@@ -2362,7 +2362,7 @@ Everything else is recommended or optional. Point a library at the issuer URL an
 
 There is a plain-OAuth sibling, `/.well-known/oauth-authorization-server`, from [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414), which generalizes the same metadata format for OAuth servers that are not doing OIDC. Same idea, different path.
 
-![sequence diagram 4|622](sequence-4.svg)
+![sequence diagram 4](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/sequence-4.svg)
 
 ### OIDC in one paragraph
 
@@ -2455,7 +2455,7 @@ X-User-Id: 1
 
 and your service cheerfully serves user 1's data. **No token required.** You did not authenticate; you read a header the attacker typed. Your entire auth system has been reduced to a request header, and the only thing that was ever protecting it was a network topology assumption that nobody wrote down and that Kubernetes will happily violate.
 
-![flowchart diagram 8|622](flowchart-8.svg)
+![flowchart diagram 8](https://raw.githubusercontent.com/psenger/jwt-token-refresh-rba-oidc-best-practice/main/attachments/software-engineering/jwt-token-refresh-risk-based-authentication-rba-and-openid-connect-oidc-best-practices/flowchart-8.svg)
 
 Mitigations, in increasing order of actually working:
 
