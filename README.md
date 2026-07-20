@@ -340,34 +340,63 @@ If your access and refresh tokens are signed with the same key, they are interch
 Put a custom type claim in the payload and check it on every verify:
 
 ```javascript
-const generateRefreshJwtClaim = ( { id, family } ) => {
+// All JWT times are NumericDate: whole seconds since the Unix epoch, never milliseconds.
+const generateIat = ( iat = Math.floor( Date.now() / 1000 ) ) => ( { iat } )
+
+// exp and nbf are offsets from iat, so they take the fragment generateIat produced
+// and read the value back out. Deriving both from one captured iat, rather than
+// calling Date.now() again, guarantees exp - iat is exactly the configured TTL.
+const generateExp = ( { iat }, secondsPastEpoch ) => ( { exp: iat + secondsPastEpoch } )
+const generateNbf = ( { iat }, secondsPastEpoch ) => ( { nbf: iat + secondsPastEpoch } )
+
+const generateType = ( typ ) => ( { typ } )
+
+// A revocation handle, not an identifier. It must be unguessable and never repeat,
+// so it is random bytes, never derived from the user or the session.
+const generateJti = () => ( { jti: crypto.randomBytes( 32 ).toString( 'hex' ) } )
+
+// The claims every token carries regardless of type. Section 3's restrictIssuer
+// and restrictAudience are checking for these.
+const baseClaim = ( claims ) => ( {
+    iss: EXPECTED_ISSUER,
+    aud: EXPECTED_AUDIENCE,
+    ...claims,
+} )
+
+const generateRefreshJwtClaim = ( { sub, family } ) => {
     const iat = generateIat()
     const jti = generateJti()
-    return _jwt( {
-        id,
+    return baseClaim( {
+        sub,
         family,
         ...generateType( 'ref' ),
-        ...generateExp( iat, refreshJwtExpiryInSeconds ),
-        ...generateNbf( iat, refreshJwtNotBeforeInSeconds ),
+        ...generateExp( iat, refreshTokenTtl ),
+        ...generateNbf( iat, refreshTokenNbf ),
         ...iat,
         ...jti,
     } )
 }
-const generateJwtClaim = ( { id } ) => {
+const generateJwtClaim = ( { sub } ) => {
     const iat = generateIat()
-    return _jwt( {
-        id,
+    return baseClaim( {
+        sub,
         ...generateType( 'reg' ),
-        ...generateExp( iat, jwtExpiryInSeconds ),
+        ...generateExp( iat, accessTokenTtl ),
         ...iat,
     } )
 }
 ```
 
+Each helper returns an object *fragment* rather than a bare value. That is what lets the claim bodies read as a flat list of spreads, close to the claims table above.
+
 Two things to notice:
 
 - The refresh token gets a **`jti`**, a unique id. The access token does not. That `jti` is your revocation handle. Section 5 explains why.
 - The refresh token gets an **`nbf`**, so it cannot be used before the access token has expired. This is optional and mildly opinionated; it stops a client from burning through refreshes early.
+
+`sub` here is the **real internal id**. It does not stay that way: `encodeJwtPayload` above encrypts it, so the token on the wire carries ciphertext, and the verifier in Section 3 reverses it after the signature checks out. The claim builders work in plaintext and the boundary does the translation, which is exactly the split described earlier in this section.
+
+`accessTokenTtl`, `refreshTokenTtl`, and `refreshTokenNbf` come from the environment. They are loaded and validated at boot in Section 5.
 
 Using separate signing keys per token type achieves the same separation and is arguably cleaner. Either works. Doing neither does not.
 
@@ -901,11 +930,13 @@ The refresh TTL is a product decision, not a security one: it is literally "how 
 ```bash
 AUTH_ACCESS_TOKEN_TTL_SECONDS=300
 AUTH_REFRESH_TOKEN_TTL_SECONDS=86400
+AUTH_REFRESH_TOKEN_NBF_SECONDS=300
 ```
 
 ```javascript
 const accessTokenTtl = parseInt( process.env.AUTH_ACCESS_TOKEN_TTL_SECONDS, 10 )
 const refreshTokenTtl = parseInt( process.env.AUTH_REFRESH_TOKEN_TTL_SECONDS, 10 )
+const refreshTokenNbf = parseInt( process.env.AUTH_REFRESH_TOKEN_NBF_SECONDS, 10 )
 
 if ( !Number.isInteger( accessTokenTtl ) || accessTokenTtl <= 0 ) {
     throw new Error( 'AUTH_ACCESS_TOKEN_TTL_SECONDS must be a positive integer' )
@@ -913,7 +944,12 @@ if ( !Number.isInteger( accessTokenTtl ) || accessTokenTtl <= 0 ) {
 if ( !Number.isInteger( refreshTokenTtl ) || refreshTokenTtl <= 0 ) {
     throw new Error( 'AUTH_REFRESH_TOKEN_TTL_SECONDS must be a positive integer' )
 }
+if ( !Number.isInteger( refreshTokenNbf ) || refreshTokenNbf < 0 ) {
+    throw new Error( 'AUTH_REFRESH_TOKEN_NBF_SECONDS must be a non-negative integer' )
+}
 ```
+
+These three are the values Section 2's claim builders consume. `refreshTokenNbf` should equal the access token TTL, since the point of `nbf` on a refresh token is "not usable until the access token it shipped with has expired".
 
 Validate at **boot**, not at first use. A malformed TTL should stop the process from starting, loudly, not silently produce a token with `exp: NaN` at 3am.
 
@@ -964,17 +1000,36 @@ Here is the trick that makes the whole design work.
 Remember that refresh tokens carry a `jti`, a unique random id. When you issue one, write that `jti` to a fast store with a TTL matching the token:
 
 ```javascript
-async function registerRefreshJti( cache, { sub, jti, exp }, fingerprint ) {
+async function registerRefreshJti( cache, { sub, jti, exp, family }, fingerprint ) {
     const ttlSeconds = Math.max( 0, exp - Math.floor( Date.now() / 1000 ) )
 
     await cache.set(
         CacheKeys.REFRESH_TOKEN,
         jti,
-        { sub, fingerprint, exp },
+        { sub, family, fingerprint, exp },
         { ttlSeconds }
     )
+
+    // Secondary index: family -> every jti ever issued under it.
+    // A key/value store cannot search its own values, so without this
+    // deleteByFamily has nothing to enumerate.
+    await cache.addToSet( CacheKeys.REFRESH_FAMILY, family, jti, { ttlSeconds } )
 }
 ```
+
+The `family` goes into **both** the entry and the index. Writing it only into the entry is the version of this that looks right and silently does nothing: the reuse-detection path below revokes by family, and it can only do that if something, somewhere, can list the family's members.
+
+```javascript
+async function deleteByFamily( cache, family ) {
+    const jtis = await cache.membersOf( CacheKeys.REFRESH_FAMILY, family )
+    await Promise.all(
+        jtis.map( ( jti ) => cache.delete( CacheKeys.REFRESH_TOKEN, jti ) )
+    )
+    await cache.delete( CacheKeys.REFRESH_FAMILY, family )
+}
+```
+
+In Redis these three primitives are `SADD`, `SMEMBERS`, and `DEL`. One detail is easy to get wrong: the family set's TTL must be **pushed out on every add**, because rotation keeps issuing tokens whose `exp` is later than the set's original expiry. Let the index lapse while live tokens remain and reuse detection goes blind at exactly the moment it is supposed to fire.
 
 Now the refresh token is only valid if **both** the signature verifies **and** its `jti` is present in the store. You have converted an unrevokable signed token into a revokable one, because now there is a row you can delete.
 
@@ -1047,7 +1102,7 @@ async function rotateRefreshToken( cache, oldClaim, fingerprint ) {
     // Signature verified, but the jti is gone. Either already used, or revoked.
     // If we have seen this family before, this is a replay. Burn it all down.
     if ( !stored ) {
-        await cache.deleteByFamily( CacheKeys.REFRESH_TOKEN, oldClaim.family )
+        await deleteByFamily( cache, oldClaim.family )
         console.warn( {
             message: 'Refresh token reuse detected, revoking token family',
             service: 'auth',
@@ -1065,7 +1120,7 @@ async function rotateRefreshToken( cache, oldClaim, fingerprint ) {
     await cache.delete( CacheKeys.REFRESH_TOKEN, oldClaim.jti )
 
     const newClaim = generateRefreshJwtClaim( {
-        id: oldClaim.sub,
+        sub: oldClaim.sub,
         family: oldClaim.family     // same family, new token
     } )
     await registerRefreshJti( cache, newClaim, fingerprint )
@@ -1085,7 +1140,7 @@ router.post( async function postSignOut( req, res ) {
     const { payload } = decodeRefreshJwtPayloadAndValidate( req.cookies.refreshToken )
 
     // 1. Kill it server-side. This is the part that matters.
-    await cache.deleteByFamily( CacheKeys.REFRESH_TOKEN, payload.family )
+    await deleteByFamily( cache, payload.family )
 
     // 2. Then clear the cookies.
     return clearAllCookies( res )
@@ -1485,7 +1540,7 @@ Enroll everywhere you get proof:
 // after a successful reset
 await repository.updatePassword( userId, newPassword )
 await saveDeviceHistory( userId, req.fingerprint )   // they just proved themselves. Enroll.
-await cache.deleteByFamily( CacheKeys.REFRESH_TOKEN, family )  // and kill old sessions
+await deleteByFamily( cache, family )                // and kill old sessions
 ```
 
 ### Classifying a device
